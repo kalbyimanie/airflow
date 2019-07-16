@@ -17,38 +17,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from airflow import utils
 from airflow import DAG
-from airflow.contrib.operators.azure_container_instances_operator import AzureContainerInstancesOperator
+from airflow.operators.dummy_operator import DummyOperator
 from datetime import datetime, timedelta
+
+now = datetime.now()
+now_to_the_hour = (
+    now - timedelta(0, 0, 0, 0, 0, 3)
+).replace(minute=0, second=0, microsecond=0)
+START_DATE = now_to_the_hour
+DAG_NAME = 'test_dag_v2'
 
 default_args = {
     'owner': 'airflow',
-    'depends_on_past': False,
-    'start_date': datetime(2018, 11, 1),
-    'email': ['airflow@example.com'],
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    'depends_on_past': True,
+    'start_date': utils.dates.days_ago(2)
 }
+dag = DAG(DAG_NAME, schedule_interval='*/10 * * * *', default_args=default_args)
 
-dag = DAG(
-    'aci_example',
-    default_args=default_args,
-    schedule_interval=timedelta(1)
-)
-
-t1 = AzureContainerInstancesOperator(
-    ci_conn_id='azure_container_instances_default',
-    registry_conn_id=None,
-    resource_group='resource-group',
-    name='aci-test-{{ ds }}',
-    image='hello-world',
-    region='WestUS2',
-    environment_variables={},
-    volumes=[],
-    memory_in_gb=4.0,
-    cpu=1.0,
-    task_id='start_container',
-    dag=dag
-)
+run_this_1 = DummyOperator(task_id='run_this_1', dag=dag)
+run_this_2 = DummyOperator(task_id='run_this_2', dag=dag)
+run_this_2.set_upstream(run_this_1)
+run_this_3 = DummyOperator(task_id='run_this_3', dag=dag)
+run_this_3.set_upstream(run_this_2)
