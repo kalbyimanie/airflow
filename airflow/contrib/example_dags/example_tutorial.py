@@ -28,7 +28,7 @@ args = {
 }
 
 dag = DAG(
-    dag_id='example_kubernetes_executor', default_args=args,
+    dag_id='example_tutorial', default_args=args,
     schedule_interval=None
 )
 
